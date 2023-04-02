@@ -21,20 +21,75 @@ export class Source extends BaseSource<Params> {
     return new ReadableStream<Item<ActionData>[]>({
       async start(controller) {
         const items: Item<ActionData>[] = [];
-        let src
-        switch(command){
-          case('function'): break;
-          case('let'): break;
-          case('set'): break;
-          case('autocmd'): break;
+        let src: Array<string> | undefined = undefined;
+        switch (args.sourceParams.command) {
+          case ("function"):
+            src =
+              (await args.denops.call(
+                "ddu#source#vim_variable#_execute",
+                args.sourceParams.command,
+              ) as string).split("\n");
+            break;
+          case ("let"):
+            src =
+              (await args.denops.call(
+                "ddu#source#vim_variable#_execute",
+                args.sourceParams.command,
+              ) as string).split("\n");
+            break;
+          case ("set"):
+            src =
+              (await args.denops.call(
+                "ddu#source#vim_variable#_execute",
+                args.sourceParams.command,
+              ) as string).split("\n");
+            break;
+          case ("autocmd"):
+            src =
+              (await args.denops.call(
+                "ddu#source#vim_variable#_execute",
+                args.sourceParams.command,
+              ) as string).split("\n");
+            break;
         }
-        for (const i of (await args.denops.call("ddu#source#vim_variable#_execute", args.sourceParams.command) as string).split("\n")){
-          console.log(i)
+        for (const i of src) {
+          let type = "";
+          switch (args.sourceParams.command) {
+            case ("function"):
+              type = i.split(" ")[0];
+              break;
+            case ("let"):
+              type = i.split(" ")[0];
+              break;
+            case ("set"):
+              type = i.split(" ")[0];
+              break;
+            case ("autocmd"):
+              type = i.split(" ")[0];
+              break;
+          }
+          let name = "";
+          switch (args.sourceParams.command) {
+            case ("function"):
+              name = i.split(" ")[1];
+              break;
+            case ("let"):
+              name = i.split(" ")[1];
+              break;
+            case ("set"):
+              name = i.split(" ")[1];
+              break;
+            case ("autocmd"):
+              name = i.split(" ")[1];
+              break;
+          }
           // set action data
           const action: ActionData = {
+            type: type,
+            name: name,
           };
 
-          items.push({word: i, action: action});
+          if (name != undefined) items.push({ word: name, action: action });
         }
         controller.enqueue(items);
         controller.close();
