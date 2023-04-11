@@ -2,96 +2,29 @@ import {
   BaseSource,
   Item,
   SourceOptions,
-} from "https://deno.land/x/ddu_vim@v2.3.0/types.ts";
-import { Denops, fn } from "https://deno.land/x/ddu_vim@v2.3.0/deps.ts";
-import { ActionData } from "https://deno.land/x/ddu_kind_file@v0.3.2/file.ts";
+} from "https://deno.land/x/ddu_vim@v2.7.0/types.ts";
+import { Denops, fn, vars } from "https://deno.land/x/ddu_vim@v2.7.0/deps.ts";
 
 type Params = {
-  command: "function" | "let" | "set" | "autocmd";
+  type: "function" | "option" | "var" | "event" | "cmdline";
+  bufnr: number;
 };
 
 export class Source extends BaseSource<Params> {
-  override kind = "file";
+  override kind = "vim_variable";
 
   override gather(args: {
     denops: Denops;
     sourceOptions: SourceOptions;
     sourceParams: Params;
-  }): ReadableStream<Item<ActionData>[]> {
-    return new ReadableStream<Item<ActionData>[]>({
+  }): ReadableStream<Item[]> {
+    return new ReadableStream<Item[]>({
       async start(controller) {
-        const items: Item<ActionData>[] = [];
-        let src: Array<string> | undefined = undefined;
-        switch (args.sourceParams.command) {
-          case ("function"):
-            src =
-              (await args.denops.call(
-                "ddu#source#vim_variable#_execute",
-                args.sourceParams.command,
-              ) as string).split("\n");
-            break;
-          case ("let"):
-            src =
-              (await args.denops.call(
-                "ddu#source#vim_variable#_execute",
-                args.sourceParams.command,
-              ) as string).split("\n");
-            break;
-          case ("set"):
-            src =
-              (await args.denops.call(
-                "ddu#source#vim_variable#_execute",
-                args.sourceParams.command,
-              ) as string).split("\n");
-            break;
-          case ("autocmd"):
-            src =
-              (await args.denops.call(
-                "ddu#source#vim_variable#_execute",
-                args.sourceParams.command,
-              ) as string).split("\n");
-            break;
+        let bufnr = args.sourceParams.bufnr;
+        if (bufnr < 1) {
+          bufnr = await fn.bufnr(args.denops, "%") as number;
         }
-        for (const i of src) {
-          let type = "";
-          switch (args.sourceParams.command) {
-            case ("function"):
-              type = i.split(" ")[0];
-              break;
-            case ("let"):
-              type = i.split(" ")[0];
-              break;
-            case ("set"):
-              type = i.split(" ")[0];
-              break;
-            case ("autocmd"):
-              type = i.split(" ")[0];
-              break;
-          }
-          let name = "";
-          switch (args.sourceParams.command) {
-            case ("function"):
-              name = i.split(" ")[1];
-              break;
-            case ("let"):
-              name = i.split(" ")[1];
-              break;
-            case ("set"):
-              name = i.split(" ")[1];
-              break;
-            case ("autocmd"):
-              name = i.split(" ")[1];
-              break;
-          }
-          // set action data
-          const action: ActionData = {
-            type: type,
-            name: name,
-          };
-
-          if (name != undefined) items.push({ word: name, action: action });
-        }
-        controller.enqueue(items);
+        controller.enqueue(await getVariables(args.denops, args.sourceParams.bufnr))
         controller.close();
       },
     });
@@ -99,7 +32,95 @@ export class Source extends BaseSource<Params> {
 
   override params(): Params {
     return {
-      command: "function",
+      type: "function",
+      bufnr: 1,
     };
   }
+}
+
+async function getVariables(denops: Denops, bufnr: number) {
+  const items: Item[] = [];
+  // buffer variables
+  const bufVars = await fn.getbufvar(
+    denops,
+    bufnr,
+    "",
+  ) as string;
+  for (
+    const [name, value] of Object.entries(bufVars)
+  ) {
+    items.push({
+      word: "b:" + name,
+      action: {
+        value: value,
+        type: "b",
+      },
+    });
+  }
+  // global variables
+  for (
+    const item of (await fn.getcompletion(
+      denops,
+      "g:atcoder",
+      "var",
+    ) as Array<string>)
+  ) {
+    const src = await vars.globals.get(
+      denops,
+      item.split(":")[1],
+    );
+    items.push({
+      word: item,
+      action: {
+        value: src,
+        type: "g",
+      },
+    });
+  }
+
+  // window variables
+  for (
+    const item of (await fn.getcompletion(
+      denops,
+      "w:",
+      "var",
+    ) as Array<string>)
+  ) {
+    const value = await fn.getwinvar(
+      denops,
+      await fn.win_getid(denops),
+      item.split(":")[1],
+    );
+    items.push({
+      word: item,
+      action: {
+        value: value,
+        type: "w",
+      },
+    });
+  }
+
+  // tab variables
+  for (
+    const item of (await fn.getcompletion(
+      denops,
+      "t:",
+      "var",
+    ) as Array<string>)
+  ) {
+    const value = await fn.gettabvar(
+      denops,
+      await fn.tabpagenr(denops),
+      item.split(":")[1],
+    );
+    items.push({
+      word: item,
+      action: {
+        value: value,
+        type: "w",
+      },
+    });
+  }
+
+  return items;
 }
