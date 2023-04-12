@@ -60,7 +60,7 @@ async function getVariables(denops: Denops, bufnr: number) {
   for (
     const item of (await fn.getcompletion(
       denops,
-      "g:atcoder",
+      "g",
       "var",
     ) as Array<string>)
   ) {
