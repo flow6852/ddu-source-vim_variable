@@ -6,7 +6,6 @@ import {
 import { Denops, fn, vars } from "https://deno.land/x/ddu_vim@v2.7.0/deps.ts";
 
 type Params = {
-  type: "function" | "option" | "var" | "event" | "cmdline";
   bufnr: number;
 };
 
@@ -32,7 +31,6 @@ export class Source extends BaseSource<Params> {
 
   override params(): Params {
     return {
-      type: "function",
       bufnr: 1,
     };
   }
@@ -53,7 +51,8 @@ async function getVariables(denops: Denops, bufnr: number) {
       word: "b:" + name,
       action: {
         value: value,
-        type: "b",
+        type: "var",
+        scope: "b",
       },
     });
   }
@@ -73,7 +72,8 @@ async function getVariables(denops: Denops, bufnr: number) {
       word: item,
       action: {
         value: src,
-        type: "g",
+        type: "var",
+        scope: "g",
       },
     });
   }
@@ -95,7 +95,8 @@ async function getVariables(denops: Denops, bufnr: number) {
       word: item,
       action: {
         value: value,
-        type: "w",
+        type: "var",
+        scope: "w",
       },
     });
   }
@@ -117,7 +118,8 @@ async function getVariables(denops: Denops, bufnr: number) {
       word: item,
       action: {
         value: value,
-        type: "w",
+        type: "var",
+        scope: "t",
       },
     });
   }
