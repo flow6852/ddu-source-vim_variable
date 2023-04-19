@@ -23,7 +23,9 @@ export class Source extends BaseSource<Params> {
         if (bufnr < 1) {
           bufnr = await fn.bufnr(args.denops, "%") as number;
         }
-        controller.enqueue(await getVariables(args.denops, args.sourceParams.bufnr))
+        controller.enqueue(
+          await getVariables(args.denops, args.sourceParams.bufnr),
+        );
         controller.close();
       },
     });
