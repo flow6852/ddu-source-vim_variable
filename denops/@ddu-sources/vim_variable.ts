@@ -2,6 +2,7 @@ import {
   BaseSource,
   Item,
   SourceOptions,
+  Context
 } from "https://deno.land/x/ddu_vim@v2.7.0/types.ts";
 import { Denops, fn, vars } from "https://deno.land/x/ddu_vim@v2.7.0/deps.ts";
 
@@ -16,12 +17,13 @@ export class Source extends BaseSource<Params> {
     denops: Denops;
     sourceOptions: SourceOptions;
     sourceParams: Params;
+    context: Context;
   }): ReadableStream<Item[]> {
     return new ReadableStream<Item[]>({
       async start(controller) {
         let bufnr = args.sourceParams.bufnr;
         if (bufnr < 1) {
-          bufnr = await fn.bufnr(args.denops, "%") as number;
+          bufnr = args.context.bufNr;
         }
         controller.enqueue(
           await getVariables(args.denops, args.sourceParams.bufnr),
@@ -33,7 +35,7 @@ export class Source extends BaseSource<Params> {
 
   override params(): Params {
     return {
-      bufnr: 1,
+      bufnr: 0,
     };
   }
 }
