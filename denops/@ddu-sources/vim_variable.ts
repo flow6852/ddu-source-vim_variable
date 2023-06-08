@@ -3,8 +3,8 @@ import {
   Item,
   SourceOptions,
   Context
-} from "https://deno.land/x/ddu_vim@v2.7.0/types.ts";
-import { Denops, fn, vars } from "https://deno.land/x/ddu_vim@v2.7.0/deps.ts";
+} from "https://deno.land/x/ddu_vim@v3.0.0/types.ts";
+import { Denops, fn, vars } from "https://deno.land/x/ddu_vim@v3.0.0/deps.ts";
 
 type Params = {
   bufnr: number;
