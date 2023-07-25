@@ -1,10 +1,11 @@
 import {
   BaseSource,
+  Context,
   Item,
   SourceOptions,
-  Context
 } from "https://deno.land/x/ddu_vim@v3.4.3/types.ts";
 import { Denops, fn, vars } from "https://deno.land/x/ddu_vim@v3.4.3/deps.ts";
+import { assert, is } from "https://deno.land/x/unknownutil@v3.4.0/mod.ts";
 
 type Params = {
   bufnr: number;
@@ -47,7 +48,8 @@ async function getVariables(denops: Denops, bufnr: number) {
     denops,
     bufnr,
     "",
-  ) as string;
+  );
+  assert(bufVars, is.String);
   for (
     const [name, value] of Object.entries(bufVars)
   ) {
@@ -61,12 +63,15 @@ async function getVariables(denops: Denops, bufnr: number) {
     });
   }
   // global variables
+  const globalVarItems = await fn.getcompletion(
+    denops,
+    "g:",
+    "var",
+  );
+  assert(globalVarItems, is.ArrayOf(is.String));
+
   for (
-    const item of (await fn.getcompletion(
-      denops,
-      "g:",
-      "var",
-    ) as Array<string>)
+    const item of globalVarItems
   ) {
     const src = await vars.globals.get(
       denops,
@@ -83,12 +88,14 @@ async function getVariables(denops: Denops, bufnr: number) {
   }
 
   // window variables
+  const windowVarItems = await fn.getcompletion(
+    denops,
+    "w:",
+    "var",
+  );
+  assert(windowVarItems, is.ArrayOf(is.String));
   for (
-    const item of (await fn.getcompletion(
-      denops,
-      "w:",
-      "var",
-    ) as Array<string>)
+    const item of windowVarItems
   ) {
     const value = await fn.getwinvar(
       denops,
@@ -106,12 +113,14 @@ async function getVariables(denops: Denops, bufnr: number) {
   }
 
   // tab variables
+  const tabVarItems = await fn.getcompletion(
+    denops,
+    "t:",
+    "var",
+  );
+  assert(tabVarItems, is.ArrayOf(is.String));
   for (
-    const item of (await fn.getcompletion(
-      denops,
-      "t:",
-      "var",
-    ) as Array<string>)
+    const item of tabVarItems
   ) {
     const value = await fn.gettabvar(
       denops,
