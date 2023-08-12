@@ -49,7 +49,6 @@ async function getVariables(denops: Denops, bufnr: number) {
     bufnr,
     "",
   );
-  assert(bufVars, is.String);
   for (
     const [name, value] of Object.entries(bufVars)
   ) {
